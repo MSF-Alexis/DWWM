@@ -1,0 +1,14 @@
+-- Création de la base
+CREATE DATABASE IF NOT EXISTS shop_database;
+USE shop_database;
+
+-- Table products
+DROP TABLE IF EXISTS products;
+CREATE TABLE products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    price INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

@@ -1,0 +1,1 @@
+docker run --name mariadb-restore-ex -p 3306:3306 -v ./database.sql:/docker-entrypoint-initdb.d/init.sql -v mariadb-backup-volume:/var/backups/mariadb -e MARIADB_ROOT_PASSWORD=secret -d mariadb

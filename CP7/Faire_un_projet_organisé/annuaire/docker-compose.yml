@@ -1,0 +1,27 @@
+services:
+  mariadb-dev:
+    image: mariadb:latest
+    environment:
+      MARIADB_ROOT_PASSWORD: my-secret-pw
+      MARIADB_DATABASE: main-database
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-env-volume:/var/lib/mysql
+    networks:
+      - backend
+
+  apache-php-dev:
+    image: php-apache-dev-env
+    ports:
+      - "8080:80"
+    volumes:
+      - ./EXEMPLE_ET_EP:/var/www/html
+    networks:
+      - backend
+    depends_on:
+      - mariadb-dev
+volumes:
+  mariadb-env-volume:  
+networks:
+  backend:
