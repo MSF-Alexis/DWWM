@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Ne pas réécrire si la requête cible déjà le dossier public/
+RewriteCond %{REQUEST_URI} !^/public/
+
+# Ne pas réécrire si le fichier ou dossier demandé existe déjà
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Réécrit toutes les autres requêtes vers public/index.html
+RewriteRule ^(.*)$ public/index.html [L]
+</IfModule>
