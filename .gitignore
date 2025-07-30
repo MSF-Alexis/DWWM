@@ -1,5 +1,5 @@
 **/node_modules/
-**/vendor/bin/
+**/vendor/
 *.otf
 **/mariadb_backups/
 *.lst
