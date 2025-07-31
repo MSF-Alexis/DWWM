@@ -4,3 +4,5 @@
 **/mariadb_backups/
 *.lst
 **/DAO_1/
+
+**/.env*
