@@ -66,3 +66,26 @@ function getMovieDetail(Client $guzzleClient, string|int $movieId)
         die();
     }
 }
+
+function searchMovies(Client $guzzleClient, string $query, $page = 1)
+{
+    try {
+        $response = $guzzleClient->request('GET', 'search/movie', [
+            'headers' => [
+                ...DEFAULT_HEADER_OPTIONS
+            ],
+            'query' => [
+                ...DEFAULT_QUERY_OPTIONS,
+                'query' => $query,
+                'page' => $page,
+            ]
+        ]);
+        return json_decode($response->getBody()->getContents(), true);
+    } catch (RequestException $e) {
+        echo '<pre>';
+        var_dump($e);
+        echo '</pre>';
+        die();
+    }
+}
+

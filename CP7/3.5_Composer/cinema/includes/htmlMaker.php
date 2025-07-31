@@ -10,19 +10,24 @@ function makeMovieCard(array $movieArray): string
 
     $data = [
         'imgWidth' => IMG_WIDTH,
-        'posterPath' => htmlspecialchars($movieArray['poster_path']),
+        'posterPath' => htmlspecialchars($movieArray['poster_path'] ?? ''),
         'title' => htmlspecialchars($truncateText($movieArray['title'], MOVIE_TITLE_MAX_LENGTH)),
         'overview' => htmlspecialchars($truncateText($movieArray['overview'], MOVIE_OVERVIEW_MAX_LENGHT)),
         'id' => (int) $movieArray['id']
     ];
 
     return sprintf(
-        "<div class='card'>
-            <img class='card-img-top' src='https://image.tmdb.org/t/p/w%d%s' alt='Image de couverture du film - %s'>
-            <div class='card-body'>
+        "<div class='card h-100 w-100'>
+            <div class='card-img-container' style='height: 400px; overflow: hidden; display: flex; align-items: center; justify-content: center; background-color: #f8f9fa;'>
+                <img class='card-img-top' 
+                     src='https://image.tmdb.org/t/p/w%d%s' 
+                     alt='Image de couverture du film - %s' 
+                     style='max-width: 100%%; max-height: 100%%; object-fit: contain;'>
+            </div>
+            <div class='card-body d-flex flex-column'>
                 <h5 class='card-title'>%s</h5>
-                <p class='card-text'>%s</p>
-                <a href='/public?action=detail&id=%d' class='btn btn-primary'>Voir les détails</a>
+                <p class='card-text flex-grow-1'>%s</p>
+                <a href='/public?action=detail&id=%d' class='btn btn-primary mt-auto'>Voir les détails</a>
             </div>
         </div>",
         $data['imgWidth'],
@@ -34,11 +39,15 @@ function makeMovieCard(array $movieArray): string
     );
 }
 
-function makeMovieGallery(array $movies)
+
+
+
+
+function makeMovieGallery(array $movies): string
 {
     $resultHtml = "<div class='row g-3'>";
     foreach ($movies as $movie) {
-        $resultHtml .= "<div class='col-3'>" . makeMovieCard($movie) . "</div>";
+        $resultHtml .= "<div class='col-xl-3 col-lg-4 col-md-6 col-sm-12 d-flex'>" . makeMovieCard($movie) . "</div>";
     }
     $resultHtml .= "</div>";
     return $resultHtml;
@@ -244,7 +253,6 @@ function makeMovieDetail(array $movieData): string
                         </div>
                     </div>
                     
-                    <!-- Synopsis -->
                     <div class='card mb-5 shadow-lg'>
                         <div class='card-header bg-primary text-white py-3'>
                             <h3 class='card-title h3 mb-0'><i class='fas fa-book-open me-2'></i>Synopsis complet</h3>
@@ -370,4 +378,185 @@ function makeMovieDetail(array $movieData): string
         $imdbLink,                                                  // IMDB link
         $homepageLink                                               // homepage link
     );
+}
+
+function makePagination(int $currentPage = 1, int $totalPages = 1, array $queryParams = [], int $maxVisible = 7): string
+{
+    if ($totalPages <= 1) {
+        return '';
+    }
+
+    $currentPage = max(1, min($currentPage, $totalPages));
+
+    $buildUrl = function (int $page) use ($queryParams): string {
+        $params = array_merge($queryParams, ['page' => $page]);
+        return '?' . http_build_query($params);
+    };
+
+    $halfVisible = floor($maxVisible / 2);
+    $startPage = max(1, $currentPage - $halfVisible);
+    $endPage = min($totalPages, $startPage + $maxVisible - 1);
+
+    if ($endPage - $startPage + 1 < $maxVisible) {
+        $startPage = max(1, $endPage - $maxVisible + 1);
+    }
+
+    $html = "<nav aria-label='Navigation des pages' class='mt-4'>
+        <ul class='pagination justify-content-center pagination-sm d-sm-none'>";
+
+    $html .= sprintf(
+        "<li class='page-item %s'>
+            %s
+        </li>
+        <li class='page-item active'>
+            <span class='page-link'>%d / %d</span>
+        </li>
+        <li class='page-item %s'>
+            %s
+        </li>",
+        $currentPage <= 1 ? 'disabled' : '',
+        $currentPage <= 1
+            ? "<span class='page-link'>&laquo;</span>"
+            : sprintf("<a class='page-link' href='%s'>&laquo;</a>", $buildUrl($currentPage - 1)),
+        $currentPage,
+        $totalPages,
+        $currentPage >= $totalPages ? 'disabled' : '',
+        $currentPage >= $totalPages
+            ? "<span class='page-link'>&raquo;</span>"
+            : sprintf("<a class='page-link' href='%s'>&raquo;</a>", $buildUrl($currentPage + 1))
+    );
+
+    $html .= "</ul>
+        <ul class='pagination justify-content-center d-none d-sm-flex'>";
+
+    if ($currentPage > 1) {
+        $html .= sprintf(
+            "<li class='page-item'>
+                <a class='page-link' href='%s' aria-label='Page précédente'>
+                    <span aria-hidden='true' class='d-none d-md-inline'>&laquo; Précédent</span>
+                    <span aria-hidden='true' class='d-md-none'>&laquo;</span>
+                </a>
+            </li>",
+            $buildUrl($currentPage - 1)
+        );
+    } else {
+        $html .= "<li class='page-item disabled'>
+            <span class='page-link'>
+                <span aria-hidden='true' class='d-none d-md-inline'>&laquo; Précédent</span>
+                <span aria-hidden='true' class='d-md-none'>&laquo;</span>
+            </span>
+        </li>";
+    }
+
+    if ($startPage > 1) {
+        $html .= sprintf(
+            "<li class='page-item'>
+                <a class='page-link' href='%s'>1</a>
+            </li>",
+            $buildUrl(1)
+        );
+
+        if ($startPage > 2) {
+            $html .= "<li class='page-item disabled d-none d-lg-block'>
+                <span class='page-link'>...</span>
+            </li>";
+        }
+    }
+
+    for ($i = $startPage; $i <= $endPage; $i++) {
+        $hiddenClass = '';
+        if ($i !== $currentPage && $i !== 1 && $i !== $totalPages) {
+            if (abs($i - $currentPage) > 1) {
+                $hiddenClass = 'd-none d-md-block';
+            }
+        }
+
+        if ($i === $currentPage) {
+            $html .= sprintf(
+                "<li class='page-item active' aria-current='page'>
+                    <span class='page-link'>%d</span>
+                </li>",
+                $i
+            );
+        } else {
+            $html .= sprintf(
+                "<li class='page-item %s'>
+                    <a class='page-link' href='%s'>%d</a>
+                </li>",
+                $hiddenClass,
+                $buildUrl($i),
+                $i
+            );
+        }
+    }
+
+    if ($endPage < $totalPages) {
+        if ($endPage < $totalPages - 1) {
+            $html .= "<li class='page-item disabled d-none d-lg-block'>
+                <span class='page-link'>...</span>
+            </li>";
+        }
+
+        $html .= sprintf(
+            "<li class='page-item'>
+                <a class='page-link' href='%s'>%d</a>
+            </li>",
+            $buildUrl($totalPages),
+            $totalPages
+        );
+    }
+
+    if ($currentPage < $totalPages) {
+        $html .= sprintf(
+            "<li class='page-item'>
+                <a class='page-link' href='%s' aria-label='Page suivante'>
+                    <span aria-hidden='true' class='d-none d-md-inline'>Suivant &raquo;</span>
+                    <span aria-hidden='true' class='d-md-none'>&raquo;</span>
+                </a>
+            </li>",
+            $buildUrl($currentPage + 1)
+        );
+    } else {
+        $html .= "<li class='page-item disabled'>
+            <span class='page-link'>
+                <span aria-hidden='true' class='d-none d-md-inline'>Suivant &raquo;</span>
+                <span aria-hidden='true' class='d-md-none'>&raquo;</span>
+            </span>
+        </li>";
+    }
+
+    $html .= "</ul></nav>";
+
+    return $html;
+}
+
+function makePaginationSummary(int $currentPage = 1, int $totalPages = 1, int $totalResults = 0): string
+{
+    if ($totalPages <= 1) {
+        return $totalResults > 0
+            ? "<p class='text-muted text-center mb-3 small'>{$totalResults} résultat(s)</p>"
+            : '';
+    }
+
+    $summary = "Page {$currentPage} sur {$totalPages}";
+
+    if ($totalResults > 0) {
+        $summary .= " - " . number_format($totalResults, 0, ',', ' ') . " résultat(s)";
+    }
+
+    return "<p class='text-muted text-center mb-3 small'>{$summary}</p>";
+}
+
+function makeSearchResultsHeader(string $query, int $totalResults): string
+{
+    $safeQuery = htmlspecialchars($query, ENT_QUOTES, 'UTF-8');
+    if ($totalResults === 0) {
+        return "<div class='alert alert-warning text-center'>
+                    Aucun résultat trouvé pour « {$safeQuery} ».
+                </div>";
+    }
+    return "<div class='alert alert-info'>
+                <h4 class='mb-1'>Résultats pour : « {$safeQuery} »</h4>
+                <p class='mb-0'>{$totalResults} film(s) trouvé(s)</p>
+            </div>";
 }
