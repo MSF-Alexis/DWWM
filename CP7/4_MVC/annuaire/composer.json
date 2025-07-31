@@ -1,0 +1,15 @@
+{
+    "name": "stagiaire/annuaire",
+    "autoload": {
+        "psr-4": {
+            "Stagiaire\\Annuaire\\": "app/"
+        }
+    },
+    "authors": [
+        {
+            "name": "alexis legras",
+            "email": "alexis.l.msf@gmail.com"
+        }
+    ],
+    "require": {}
+}
